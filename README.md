@@ -1,3 +1,3 @@
 # otus-mssql-gdubovitskiy
 Домашние задания курса OTUS "MS SQL Server Developer".  
-Группа 2023-01.
+Группа 2023-01.  

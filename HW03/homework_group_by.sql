@@ -33,7 +33,7 @@ USE WideWorldImporters;
 SELECT YEAR(o.OrderDate)               AS YearOrderDate
      , MONTH(o.OrderDate)              AS MonthOrderDate
      , AVG(ol.UnitPrice * ol.Quantity) AS AvgUnitPrice
-     , SUM(ol.UnitPrice * ol.Quantity) AS SumUnitPrice
+     , SUM(ol.UnitPrice * ol.Quantity) AS SalesTotal
   FROM Sales.Invoices i
        JOIN Sales.Orders o ON i.OrderID = o.OrderID
        JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
@@ -55,7 +55,7 @@ SELECT YEAR(o.OrderDate)               AS YearOrderDate
 
 SELECT YEAR(o.OrderDate)               AS YearOrderDate
      , MONTH(o.OrderDate)              AS MonthOrderDate
-     , SUM(ol.UnitPrice * ol.Quantity) AS SumUnitPrice
+     , SUM(ol.UnitPrice * ol.Quantity) AS SalesTotal
   FROM Sales.Invoices i
        JOIN Sales.Orders o ON i.OrderID = o.OrderID
        JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
@@ -83,7 +83,7 @@ HAVING SUM(ol.UnitPrice * ol.Quantity) > 4600000
 SELECT YEAR(o.OrderDate)               AS YearOrderDate
      , MONTH(o.OrderDate)              AS MonthOrderDate
      , si.StockItemName                AS StockItemName
-     , SUM(ol.UnitPrice * ol.Quantity) AS SumUnitPrice
+     , SUM(ol.UnitPrice * ol.Quantity) AS SalesTotal
      , MIN(o.OrderDate)                AS FirstOrderDate
      , SUM(ol.Quantity)                AS SumQuantity
   FROM Sales.Invoices i
@@ -138,11 +138,11 @@ SELECT YEAR(DATEADD(MONTH, Counter - 1, @date_start)) AS Year, MONTH(DATEADD(MON
 
 SELECT res.Year
      , res.Month
-     , IIF(t.SumUnitPrice IS NULL, '-', CONVERT(VARCHAR, t.SumUnitPrice)) AS SumUnitPrice
+     , IIF(t.SalesTotal IS NULL, '-', CONVERT(VARCHAR, t.SalesTotal)) AS SalesTotal
   FROM #result res
        LEFT JOIN (SELECT YEAR(o.OrderDate)               AS YearOrderDate
                        , MONTH(o.OrderDate)              AS MonthOrderDate
-                       , SUM(ol.UnitPrice * ol.Quantity) AS SumUnitPrice
+                       , SUM(ol.UnitPrice * ol.Quantity) AS SalesTotal
                     FROM Sales.Invoices i
                          JOIN Sales.Orders o ON i.OrderID = o.OrderID
                          JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID

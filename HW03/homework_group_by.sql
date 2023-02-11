@@ -138,7 +138,7 @@ SELECT YEAR(DATEADD(MONTH, Counter - 1, @date_start)) AS Year, MONTH(DATEADD(MON
 
 SELECT res.Year
      , res.Month
-     , IIF(t.SumUnitPrice IS NULL, '-', CONVERT(VARCHAR, t.SumUnitPrice))
+     , IIF(t.SumUnitPrice IS NULL, '-', CONVERT(VARCHAR, t.SumUnitPrice)) AS SumUnitPrice
   FROM #result res
        LEFT JOIN (SELECT YEAR(o.OrderDate)               AS YearOrderDate
                        , MONTH(o.OrderDate)              AS MonthOrderDate

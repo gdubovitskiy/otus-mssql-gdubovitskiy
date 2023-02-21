@@ -19,6 +19,7 @@ https://github.com/Microsoft/sql-server-samples/releases/tag/wide-world-importer
 -- ---------------------------------------------------------------------------
 
 USE WideWorldImporters
+
     /*
     1. Сделать расчет суммы продаж нарастающим итогом по месяцам с 2015 года
     (в рамках одного месяца он будет одинаковый, нарастать будет в течение времени выборки).
@@ -62,15 +63,22 @@ SELECT i.OrderID
 в каждом месяце за 2016 год (по 2 самых популярных продукта в каждом месяце).
 */
 
-SELECT TOP (2) WITH TIES
-    o.OrderDate
-     , si.StockItemName
-  FROM Sales.Invoices i
-       JOIN Sales.Orders o ON i.OrderID = o.OrderID
-       JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
-       JOIN Warehouse.StockItems si ON si.StockItemID = ol.StockItemID
- WHERE o.OrderDate BETWEEN '20160101' AND '20161231'
- ORDER BY ROW_NUMBER() OVER (PARTITION BY si.StockItemID ORDER BY o.OrderDate DESC);
+SELECT t.YearOrderDate
+     , t.MonthOrderDate
+     , t.StockItemName
+     , t.CntStockItems
+  FROM (SELECT YEAR(o.OrderDate)                                                                       AS YearOrderDate
+             , MONTH(o.OrderDate)                                                                      AS MonthOrderDate
+             , si.StockItemName                                                                        AS StockItemName
+             , COUNT(ol.StockItemID)                                                                   AS CntStockItems
+             , ROW_NUMBER() OVER (PARTITION BY MONTH(o.OrderDate) ORDER BY COUNT(ol.StockItemID) DESC) AS Rang
+          FROM Sales.Invoices i
+               JOIN Sales.Orders o ON i.OrderID = o.OrderID
+               JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
+               JOIN Warehouse.StockItems si ON ol.StockItemID = si.StockItemID
+         WHERE o.OrderDate BETWEEN '20160101' AND '20161231'
+         GROUP BY YEAR(o.OrderDate), MONTH(o.OrderDate), si.StockItemName) t
+ WHERE t.Rang BETWEEN 1 AND 2;
 
 /*
 4. Функции одним запросом
@@ -86,12 +94,7 @@ SELECT TOP (2) WITH TIES
 Для этой задачи НЕ нужно писать аналог без аналитических функций.
 */
 
-SELECT si.StockItemID
-     , si.StockItemName
-     , si.Brand
-     , si.UnitPrice
-  FROM Warehouse.StockItems si
-ORDER BY si.StockItemName;
+напишите здесь свое решение
 
 /*
 5. По каждому сотруднику выведите последнего клиента, которому сотрудник что-то продал.

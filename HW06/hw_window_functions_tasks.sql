@@ -20,43 +20,62 @@ https://github.com/Microsoft/sql-server-samples/releases/tag/wide-world-importer
 
 USE WideWorldImporters
 
-    /*
-    1. Сделать расчет суммы продаж нарастающим итогом по месяцам с 2015 года
-    (в рамках одного месяца он будет одинаковый, нарастать будет в течение времени выборки).
-    Выведите: id продажи, название клиента, дату продажи, сумму продажи, сумму нарастающим итогом
+/*
+1. Сделать расчет суммы продаж нарастающим итогом по месяцам с 2015 года
+(в рамках одного месяца он будет одинаковый, нарастать будет в течение времени выборки).
+Выведите: id продажи, название клиента, дату продажи, сумму продажи, сумму нарастающим итогом
 
-    Пример:
-    -------------+----------------------------
-    Дата продажи | Нарастающий итог по месяцу
-    -------------+----------------------------
-     2015-01-29   | 4801725.31
-     2015-01-30	 | 4801725.31
-     2015-01-31	 | 4801725.31
-     2015-02-01	 | 9626342.98
-     2015-02-02	 | 9626342.98
-     2015-02-03	 | 9626342.98
-    Продажи можно взять из таблицы Invoices.
-    Нарастающий итог должен быть без оконной функции.
-    */
+Пример:
+-------------+----------------------------
+Дата продажи | Нарастающий итог по месяцу
+-------------+----------------------------
+ 2015-01-29   | 4801725.31
+ 2015-01-30	 | 4801725.31
+ 2015-01-31	 | 4801725.31
+ 2015-02-01	 | 9626342.98
+ 2015-02-02	 | 9626342.98
+ 2015-02-03	 | 9626342.98
+Продажи можно взять из таблицы Invoices.
+Нарастающий итог должен быть без оконной функции.
+*/
 
-    напишите здесь свое решение
+SET STATISTICS TIME ON;
+
+  WITH DaySumTableCTE AS (SELECT o.OrderID
+                               , c.CustomerName
+                               , o.OrderDate
+                               , (SELECT SUM(ol.Quantity * ol.UnitPrice) FROM Sales.OrderLines AS ol WHERE ol.OrderID = i.OrderID AND i.InvoiceDate BETWEEN '20150101' AND '20151231') AS OrderSum
+                            FROM Sales.Invoices i
+                                 INNER JOIN Sales.Orders o ON o.OrderID = i.OrderID
+                                 INNER JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
+                                 INNER JOIN Sales.Customers c ON c.CustomerID = o.CustomerID
+                           WHERE o.OrderDate BETWEEN '20150101' AND '20151231')
+
+SELECT *
+  FROM DaySumTableCTE ds
+ORDER BY ds.OrderDate, ds.OrderID;
 
 /*
 2. Сделайте расчет суммы нарастающим итогом в предыдущем запросе с помощью оконной функции.
-   Сравните производительность запросов 1 и 2 с помощью set statistics time, io on
+ Сравните производительность запросов 1 и 2 с помощью set statistics time, io on
 */
 
-SELECT i.OrderID
+SET STATISTICS TIME ON;
+
+-- Время ЦП = 343 мс, затраченное время = 1631 мс.
+-- [2023-02-22 00:08:48] 500 rows retrieved starting from 1 in 2 s 75 ms (execution: 2 s 51 ms, fetching: 24 ms)
+
+SELECT o.OrderID
      , c.CustomerName
      , o.OrderDate
-     , ol.UnitPrice * ol.Quantity                                              AS SalesTotal
-     , SUM(ol.UnitPrice * ol.Quantity) OVER (ORDER BY o.OrderID, c.CustomerID) AS CumSumMonth
+     , SUM(ol.Quantity * ol.UnitPrice) OVER (PARTITION BY i.InvoiceID)                       AS OrderSum
+     , SUM(ol.Quantity * ol.UnitPrice) OVER (ORDER BY YEAR(o.OrderDate), MONTH(o.OrderDate)) AS CumOrderSum
   FROM Sales.Invoices i
-       JOIN Sales.Orders o ON i.OrderID = o.OrderID
-       JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
-       JOIN Sales.Customers c ON o.CustomerID = c.CustomerID
- WHERE o.OrderDate >= '20150101'
- ORDER BY o.OrderDate, o.OrderID, c.CustomerID;
+       INNER JOIN Sales.Orders o ON o.OrderID = i.OrderID
+       INNER JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
+       INNER JOIN Sales.Customers c ON c.CustomerID = o.CustomerID
+ WHERE o.OrderDate BETWEEN '20150101' AND '20151231'
+ ORDER BY o.OrderDate, o.OrderID;
 
 /*
 3. Вывести список 2х самых популярных продуктов (по количеству проданных) 

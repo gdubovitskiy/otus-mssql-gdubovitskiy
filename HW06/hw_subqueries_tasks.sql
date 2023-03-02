@@ -59,7 +59,32 @@ SELECT StockItemID
 Представьте несколько способов (в том числе с CTE). 
 */
 
-TODO: напишите здесь свое решение
+-- просто ТОП-5 (ниже версия для уникальных)
+  WITH CTE_TOP5_MAX_PAYMENTS_CUSTOMER AS (SELECT TOP 5 ct.CustomerID, ct.TransactionAmount FROM Sales.CustomerTransactions ct ORDER BY ct.TransactionAmount DESC)
+
+SELECT c.CustomerID
+     , c.CustomerName
+     , cte.TransactionAmount
+  FROM Sales.Customers c
+       INNER JOIN CTE_TOP5_MAX_PAYMENTS_CUSTOMER cte ON cte.CustomerID = c.CustomerID
+ ORDER BY cte.TransactionAmount DESC;
+
+
+SELECT c.CustomerID
+     , c.CustomerName
+     , t.TransactionAmount
+  FROM Sales.Customers c
+       INNER JOIN (SELECT TOP 5 ct.CustomerID, ct.TransactionAmount FROM Sales.CustomerTransactions ct ORDER BY ct.TransactionAmount DESC) t ON t.CustomerID = c.CustomerID
+ ORDER BY t.TransactionAmount DESC;
+
+-- ТОП-5 уникальных
+SELECT c.CustomerID
+     , c.CustomerName
+     , t.MaxTransactionAmount
+  FROM Sales.Customers c
+       INNER JOIN (SELECT TOP 5 ct.CustomerID, MAX(ct.TransactionAmount) AS MaxTransactionAmount FROM Sales.CustomerTransactions ct GROUP BY ct.CustomerID ORDER BY MaxTransactionAmount DESC) t ON t.CustomerID = c.CustomerID
+ ORDER BY t.MaxTransactionAmount DESC;
+
 
 /*
 4. Выберите города (ид и название), в которые были доставлены товары, 
@@ -67,4 +92,3 @@ TODO: напишите здесь свое решение
 который осуществлял упаковку заказов (PackedByPersonID).
 */
 
-TODO: напишите здесь свое решение

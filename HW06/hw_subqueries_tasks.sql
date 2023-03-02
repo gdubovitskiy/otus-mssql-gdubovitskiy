@@ -92,3 +92,13 @@ SELECT c.CustomerID
 который осуществлял упаковку заказов (PackedByPersonID).
 */
 
+SELECT DISTINCT
+       cs.CityID
+     , cs.CityName
+  FROM Sales.Orders o
+       JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
+       JOIN Sales.Customers c ON c.CustomerID = o.CustomerID
+       JOIN Application.People p ON p.PersonID = o.PickedByPersonID
+       JOIN Application.Cities cs ON cs.CityID = c.DeliveryCityID
+       JOIN (SELECT TOP 3 si.StockItemID, si.StockItemName, si.UnitPrice FROM Warehouse.StockItems si ORDER BY UnitPrice DESC) t ON t.StockItemID = ol.StockItemID
+ORDER BY cs.CityID;

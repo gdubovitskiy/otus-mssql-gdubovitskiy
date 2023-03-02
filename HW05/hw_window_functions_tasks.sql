@@ -41,6 +41,12 @@ USE WideWorldImporters
 
 SET STATISTICS TIME ON;
 
+-- [S0000][3613] Время синтаксического анализа и компиляции SQL Server:
+-- время ЦП = 78 мс, истекшее время = 116 мс.
+-- [S0000][3612] Время работы SQL Server:
+-- Время ЦП = 35703 мс, затраченное время = 36853 мс.
+-- 500 rows retrieved starting from 1 in 37 s 258 ms (execution: 37 s 210 ms, fetching: 48 ms)
+
 SELECT i.InvoiceID
      , c.CustomerName
      , i.InvoiceDate
@@ -60,6 +66,12 @@ SELECT i.InvoiceID
 
 SET STATISTICS TIME ON;
 
+-- [S0000][3613] Время синтаксического анализа и компиляции SQL Server:
+-- время ЦП = 94 мс, истекшее время = 153 мс.
+-- [S0000][3612] Время работы SQL Server:
+-- Время ЦП = 218 мс, затраченное время = 1374 мс.
+-- 500 rows retrieved starting from 1 in 1 s 822 ms (execution: 1 s 788 ms, fetching: 34 ms)
+
   WITH DaySumTableCTE AS (SELECT o.OrderID
                                , c.CustomerName
                                , i.CustomerID
@@ -76,6 +88,8 @@ SELECT *
   FROM DaySumTableCTE ds
 --  WHERE ds.OrderID = 40642
  ORDER BY ds.InvoiceDate, ds.CustomerID;
+
+
 
 /*
 2. Сделайте расчет суммы нарастающим итогом в предыдущем запросе с помощью оконной функции.
@@ -138,13 +152,13 @@ SELECT t.YearOrderDate
 SELECT si.StockItemID
      , si.StockItemName
      , si.Brand
-     , ROW_NUMBER() OVER (PARTITION BY LEFT(si.StockItemName, 1) ORDER BY si.StockItemName) AS [NumbererFirstChar]
-     , COUNT(*) OVER ()                                                                     AS [TotalCount]
-     , COUNT(*) OVER (PARTITION BY LEFT(si.StockItemName, 1))                               AS [TotalCountFirstChar]
-     , LEAD(si.StockItemID) OVER (ORDER BY si.StockItemName)                                AS [NextId]
-     , LAG(si.StockItemID) OVER (ORDER BY si.StockItemName)                                 AS [PrevId]
-     , LAG(si.StockItemName, 2, 'No items') OVER (ORDER BY si.StockItemName)                AS [Prevx2Name]
-     , NTILE(30) OVER (ORDER BY si.TypicalWeightPerUnit)                                    AS [GroupWeight]
+     , ROW_NUMBER() OVER (PARTITION BY LEFT(si.StockItemName, 1) ORDER BY si.StockItemName) AS FirstChar
+     , COUNT(*) OVER ()                                                                     AS TotalCount
+     , COUNT(*) OVER (PARTITION BY LEFT(si.StockItemName, 1))                               AS TotalCountFirstChar
+     , LEAD(si.StockItemID) OVER (ORDER BY si.StockItemName)                                AS NextId
+     , LAG(si.StockItemID) OVER (ORDER BY si.StockItemName)                                 AS PrevId
+     , LAG(si.StockItemName, 2, 'No items') OVER (ORDER BY si.StockItemName)                AS Prev2stringName
+     , NTILE(30) OVER (ORDER BY si.TypicalWeightPerUnit)                                    AS GroupWeight
   FROM Warehouse.StockItems si
  ORDER BY si.StockItemName;
 

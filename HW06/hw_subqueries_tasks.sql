@@ -34,14 +34,24 @@ SELECT p.PersonID, p.FullName
   FROM Application.People p
  WHERE p.IsSalesperson = 1
    AND p.IsSalesperson NOT IN (SELECT DISTINCT i.SalespersonPersonID FROM Sales.Invoices i WHERE i.InvoiceDate = '20150704')
-ORDER BY p.PersonID;
+ ORDER BY p.PersonID;
 
 /*
 2. Выберите товары с минимальной ценой (подзапросом). Сделайте два варианта подзапроса. 
 Вывести: ИД товара, наименование товара, цена.
 */
 
-TODO: напишите здесь свое решение
+SELECT StockItemID
+     , StockItemName
+     , UnitPrice
+  FROM Warehouse.StockItems
+ WHERE UnitPrice = (SELECT MIN(UnitPrice) FROM Warehouse.StockItems);
+
+SELECT StockItemID
+     , StockItemName
+     , UnitPrice
+  FROM Warehouse.StockItems
+ WHERE UnitPrice = (SELECT TOP 1 StockItems.UnitPrice FROM Warehouse.StockItems ORDER BY StockItems.UnitPrice);
 
 /*
 3. Выберите информацию по клиентам, которые перевели компании пять максимальных платежей 

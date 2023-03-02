@@ -41,19 +41,41 @@ USE WideWorldImporters
 
 SET STATISTICS TIME ON;
 
+SELECT i.InvoiceID
+     , c.CustomerName
+     , i.InvoiceDate
+     , (SELECT SUM(il.Quantity * il.UnitPrice) FROM Sales.InvoiceLines AS il WHERE il.InvoiceID = i.InvoiceID) AS OrderSum
+     , (SELECT SUM(il2.Quantity * il2.UnitPrice)
+          FROM Sales.InvoiceLines AS il2
+               INNER JOIN Sales.Invoices AS i2 ON il2.InvoiceID = i2.InvoiceID
+         WHERE i2.InvoiceDate <= EOMONTH(i.InvoiceDate)
+           AND i2.InvoiceDate >= '20150101'
+           AND i2.InvoiceDate < '20160101')                                                                    AS CumulativeTotal
+  FROM Sales.Invoices AS i
+       INNER JOIN Sales.Customers c ON i.CustomerID = c.CustomerID
+       INNER JOIN Sales.InvoiceLines il ON i.InvoiceID = il.InvoiceID
+ WHERE i.InvoiceDate BETWEEN '20150101' AND '20151231'
+--    AND i.OrderID = 40642
+ ORDER BY i.InvoiceDate, i.CustomerID;
+
+SET STATISTICS TIME ON;
+
   WITH DaySumTableCTE AS (SELECT o.OrderID
                                , c.CustomerName
-                               , o.OrderDate
+                               , i.CustomerID
+                               , i.InvoiceDate
                                , (SELECT SUM(ol.Quantity * ol.UnitPrice) FROM Sales.OrderLines AS ol WHERE ol.OrderID = i.OrderID AND i.InvoiceDate BETWEEN '20150101' AND '20151231') AS OrderSum
+                               , SUM(ol.Quantity * ol.UnitPrice) OVER (ORDER BY DATEPART(YEAR, i.InvoiceDate), DATEPART(MONTH, i.InvoiceDate))                                         AS CumulativeTotal
                             FROM Sales.Invoices i
                                  INNER JOIN Sales.Orders o ON o.OrderID = i.OrderID
                                  INNER JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
                                  INNER JOIN Sales.Customers c ON c.CustomerID = o.CustomerID
-                           WHERE o.OrderDate BETWEEN '20150101' AND '20151231')
+                           WHERE i.InvoiceDate BETWEEN '20150101' AND '20151231')
 
 SELECT *
   FROM DaySumTableCTE ds
-ORDER BY ds.OrderDate, ds.OrderID;
+--  WHERE ds.OrderID = 40642
+ ORDER BY ds.InvoiceDate, ds.CustomerID;
 
 /*
 2. Сделайте расчет суммы нарастающим итогом в предыдущем запросе с помощью оконной функции.
@@ -113,7 +135,18 @@ SELECT t.YearOrderDate
 Для этой задачи НЕ нужно писать аналог без аналитических функций.
 */
 
-напишите здесь свое решение
+SELECT si.StockItemID
+     , si.StockItemName
+     , si.Brand
+     , ROW_NUMBER() OVER (PARTITION BY LEFT(si.StockItemName, 1) ORDER BY si.StockItemName) AS [NumbererFirstChar]
+     , COUNT(*) OVER ()                                                                     AS [TotalCount]
+     , COUNT(*) OVER (PARTITION BY LEFT(si.StockItemName, 1))                               AS [TotalCountFirstChar]
+     , LEAD(si.StockItemID) OVER (ORDER BY si.StockItemName)                                AS [NextId]
+     , LAG(si.StockItemID) OVER (ORDER BY si.StockItemName)                                 AS [PrevId]
+     , LAG(si.StockItemName, 2, 'No items') OVER (ORDER BY si.StockItemName)                AS [Prevx2Name]
+     , NTILE(30) OVER (ORDER BY si.TypicalWeightPerUnit)                                    AS [GroupWeight]
+  FROM Warehouse.StockItems si
+ ORDER BY si.StockItemName;
 
 /*
 5. По каждому сотруднику выведите последнего клиента, которому сотрудник что-то продал.

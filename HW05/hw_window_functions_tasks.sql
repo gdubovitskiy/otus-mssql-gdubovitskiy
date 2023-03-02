@@ -64,6 +64,14 @@ SELECT i.InvoiceID
 --    AND i.OrderID = 40642
  ORDER BY i.InvoiceDate, i.CustomerID;
 
+
+/*
+2. Сделайте расчет суммы нарастающим итогом в предыдущем запросе с помощью оконной функции.
+ Сравните производительность запросов 1 и 2 с помощью set statistics time, io on
+*/
+
+-- По результатам оконная функция быстрее в несколько десятков раз
+
 SET STATISTICS TIME ON;
 
 -- [S0000][3613] Время синтаксического анализа и компиляции SQL Server:
@@ -88,30 +96,6 @@ SELECT *
   FROM DaySumTableCTE ds
 --  WHERE ds.OrderID = 40642
  ORDER BY ds.InvoiceDate, ds.CustomerID;
-
-
-
-/*
-2. Сделайте расчет суммы нарастающим итогом в предыдущем запросе с помощью оконной функции.
- Сравните производительность запросов 1 и 2 с помощью set statistics time, io on
-*/
-
-SET STATISTICS TIME ON;
-
--- Время ЦП = 343 мс, затраченное время = 1631 мс.
--- [2023-02-22 00:08:48] 500 rows retrieved starting from 1 in 2 s 75 ms (execution: 2 s 51 ms, fetching: 24 ms)
-
-SELECT o.OrderID
-     , c.CustomerName
-     , o.OrderDate
-     , SUM(ol.Quantity * ol.UnitPrice) OVER (PARTITION BY i.InvoiceID)                       AS OrderSum
-     , SUM(ol.Quantity * ol.UnitPrice) OVER (ORDER BY YEAR(o.OrderDate), MONTH(o.OrderDate)) AS CumOrderSum
-  FROM Sales.Invoices i
-       INNER JOIN Sales.Orders o ON o.OrderID = i.OrderID
-       INNER JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
-       INNER JOIN Sales.Customers c ON c.CustomerID = o.CustomerID
- WHERE o.OrderDate BETWEEN '20150101' AND '20151231'
- ORDER BY o.OrderDate, o.OrderID;
 
 /*
 3. Вывести список 2х самых популярных продуктов (по количеству проданных) 

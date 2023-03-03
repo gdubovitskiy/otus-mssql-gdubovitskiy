@@ -93,7 +93,12 @@ CountryId | CountryName | Code
 ----------+-------------+-------
 */
 
-напишите здесь свое решение
+SELECT CountryID
+     , CountryName
+     , Code
+  FROM (SELECT c.CountryID, c.CountryName, CAST(c.IsoAlpha3Code AS NVARCHAR) AS IsoAlpha3Code, CAST(c.IsoNumericCode AS NVARCHAR) AS IsoNumericCode
+          FROM Application.Countries c) AS S
+UNPIVOT (Code FOR CodeType IN (IsoAlpha3Code, IsoNumericCode)) AS U;
 
 /*
 4. Выберите по каждому клиенту два самых дорогих товара, которые он покупал.

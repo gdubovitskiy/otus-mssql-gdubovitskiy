@@ -39,26 +39,41 @@ InvoiceMonth | Peeples Valley, AZ | Medicine Lodge, KS | Gasport, NY | Sylvanite
 -------------+--------------------+--------------------+-------------+--------------+------------
 */
 
-SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID
-  FROM Sales.Customers c
- WHERE c.CustomerID BETWEEN 2 AND 6
- ORDER BY CustomerID;
+-- промежуточные запросы для удобства проверки ------------>
+-- SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID
+--   FROM Sales.Customers c
+--  WHERE c.CustomerID BETWEEN 2 AND 6
+--  ORDER BY CustomerID;
+--
+-- SELECT CAST(DATEADD(MONTH, DATEDIFF(MONTH, 0, i.InvoiceDate), 0) AS DATE) AS InvoiceMonth
+--      , t.ClienName
+--      , Trans.TransactionAmount                                            AS Amount
+--   FROM Sales.Invoices i
+--        JOIN Sales.CustomerTransactions AS Trans ON I.InvoiceId = Trans.InvoiceID
+--        JOIN (SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID FROM Sales.Customers c WHERE c.CustomerID BETWEEN 2 AND 6) t ON t.CustomerID = i.CustomerID
+------------- <--------------- конец промежуточных подсчетов
 
-SELECT CAST(DATEADD(MONTH, DATEDIFF(MONTH, 0, i.InvoiceDate), 0) AS DATE) AS InvoiceMonth
-     , t.ClienName
-     , Trans.TransactionAmount                                            AS Amount
-  FROM Sales.Invoices i
-       JOIN Sales.CustomerTransactions AS Trans ON I.InvoiceId = Trans.InvoiceID
-       JOIN (SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID FROM Sales.Customers c WHERE c.CustomerID BETWEEN 2 AND 6) t ON t.CustomerID = i.CustomerID
-
-
-SELECT *
-  FROM (SELECT DATEADD(MONTH, DATEDIFF(MONTH, 0, i.InvoiceDate), 0) AS InvoiceMonth
-             , i.CustomerID
-             , Trans.TransactionAmount                              AS Amount
+SELECT InvoiceMonth
+     , [Sylvanite, MT]
+     , [Peeples Valley, AZ]
+     , [Medicine Lodge, KS]
+     , [Gasport, NY]
+     , [Jessie, ND]
+  FROM (
+          SELECT
+            Dates.InvoiceMonth AS InvoiceMonth
+             , t.ClienName
+             , i.InvoiceID
           FROM Sales.Invoices i
-               JOIN Sales.CustomerTransactions AS Trans ON I.InvoiceId = Trans.InvoiceID) PIVOT ( COUNT(Amount) FOR [month] IN (Янв, Фев, Мар, Апр, Май, Июн, Июл, Авг, Сен, Окт, Ноя, Дек) ) AS pvt
- ORDER BY [year];
+               JOIN Sales.Customers c ON c.CustomerID = i.CustomerID
+               CROSS APPLY (SELECT InvoiceMonth = FORMAT(DATEADD(MM, DATEDIFF(MM, 0, I.InvoiceDate), 0), 'dd.MM.yyyy')) Dates
+               CROSS APPLY (SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID FROM Sales.Customers c WHERE c.CustomerID BETWEEN 2 AND 6) t
+        ) AS s
+PIVOT (
+      COUNT(s.InvoiceID)
+      FOR s.ClienName IN ([Sylvanite, MT], [Peeples Valley, AZ], [Medicine Lodge, KS], [Gasport, NY], [Jessie, ND])
+) AS pvt
+ORDER BY CAST(pvt.InvoiceMonth AS DATE);
 
 /*
 2. Для всех клиентов с именем, в котором есть "Tailspin Toys"

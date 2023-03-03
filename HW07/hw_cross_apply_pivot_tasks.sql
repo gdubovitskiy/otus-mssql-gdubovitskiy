@@ -75,7 +75,10 @@ Tailspin Toys (Head Office) | Ribeiroville
 ----------------------------+--------------------
 */
 
-напишите здесь свое решение
+SELECT CustomerName, AddressLine
+  FROM (SELECT c.CustomerName, c.DeliveryAddressLine1, c.DeliveryAddressLine2, c.PostalAddressLine1, c.PostalAddressLine2
+          FROM Sales.Customers c
+         WHERE c.CustomerName LIKE 'Tailspin Toys%') AS S UNPIVOT (AddressLine FOR AddressLineList IN (DeliveryAddressLine1, DeliveryAddressLine2, PostalAddressLine1, PostalAddressLine2)) AS U;
 
 /*
 3. В таблице стран (Application.Countries) есть поля с цифровым кодом страны и с буквенным.
@@ -97,8 +100,7 @@ SELECT CountryID
      , CountryName
      , Code
   FROM (SELECT c.CountryID, c.CountryName, CAST(c.IsoAlpha3Code AS NVARCHAR) AS IsoAlpha3Code, CAST(c.IsoNumericCode AS NVARCHAR) AS IsoNumericCode
-          FROM Application.Countries c) AS S
-UNPIVOT (Code FOR CodeType IN (IsoAlpha3Code, IsoNumericCode)) AS U;
+          FROM Application.Countries c) AS S UNPIVOT (Code FOR CodeType IN (IsoAlpha3Code, IsoNumericCode)) AS U;
 
 /*
 4. Выберите по каждому клиенту два самых дорогих товара, которые он покупал.

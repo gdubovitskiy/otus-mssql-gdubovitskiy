@@ -39,7 +39,26 @@ InvoiceMonth | Peeples Valley, AZ | Medicine Lodge, KS | Gasport, NY | Sylvanite
 -------------+--------------------+--------------------+-------------+--------------+------------
 */
 
-напишите здесь свое решение
+SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID
+  FROM Sales.Customers c
+ WHERE c.CustomerID BETWEEN 2 AND 6
+ ORDER BY CustomerID;
+
+SELECT CAST(DATEADD(MONTH, DATEDIFF(MONTH, 0, i.InvoiceDate), 0) AS DATE) AS InvoiceMonth
+     , t.ClienName
+     , Trans.TransactionAmount                                            AS Amount
+  FROM Sales.Invoices i
+       JOIN Sales.CustomerTransactions AS Trans ON I.InvoiceId = Trans.InvoiceID
+       JOIN (SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClienName, c.CustomerID FROM Sales.Customers c WHERE c.CustomerID BETWEEN 2 AND 6) t ON t.CustomerID = i.CustomerID
+
+
+SELECT *
+  FROM (SELECT DATEADD(MONTH, DATEDIFF(MONTH, 0, i.InvoiceDate), 0) AS InvoiceMonth
+             , i.CustomerID
+             , Trans.TransactionAmount                              AS Amount
+          FROM Sales.Invoices i
+               JOIN Sales.CustomerTransactions AS Trans ON I.InvoiceId = Trans.InvoiceID) PIVOT ( COUNT(Amount) FOR [month] IN (Янв, Фев, Мар, Апр, Май, Июн, Июл, Авг, Сен, Окт, Ноя, Дек) ) AS pvt
+ ORDER BY [year];
 
 /*
 2. Для всех клиентов с именем, в котором есть "Tailspin Toys"
@@ -81,4 +100,16 @@ CountryId | CountryName | Code
 В результатах должно быть ид клиета, его название, ид товара, цена, дата покупки.
 */
 
-напишите здесь свое решение
+SELECT DISTINCT t.*
+  FROM Sales.Invoices i
+       CROSS APPLY (SELECT TOP 2
+      c.CustomerID
+                         , c.CustomerName
+                         , ol.StockItemID
+                         , ol.UnitPrice
+                         , o.OrderDate
+                      FROM Sales.Customers c
+                           JOIN Sales.Orders o ON o.CustomerID = c.CustomerID
+                           JOIN Sales.OrderLines ol ON o.OrderID = ol.OrderID
+                     WHERE i.CustomerID = c.CustomerID
+                     ORDER BY ol.UnitPrice DESC) t;

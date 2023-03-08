@@ -41,5 +41,30 @@ InvoiceMonth | Aakriti Byrraju    | Abel Spirlea       | Abel Tatarescu | ... (�
 -------------+--------------------+--------------------+----------------+----------------------
 */
 
+DECLARE @SQLRequest AS NVARCHAR(MAX)
+DECLARE @ColumnName AS NVARCHAR(MAX)
 
-напишите здесь свое решение
+SELECT @ColumnName = ISNULL(@ColumnName + ',', '') + QUOTENAME(CustomerName)
+FROM (SELECT c.CustomerName
+FROM Sales.Customers c
+-- WHERE c.CustomerID BETWEEN 2 AND 6
+) AS CustomerNameList
+
+SET @SQLRequest =
+N'SELECT InvoiceMonth, ' + @ColumnName + '
+  FROM (
+          SELECT
+            Dates.InvoiceMonth AS InvoiceMonth
+             , c.CustomerName
+             , i.InvoiceID
+          FROM Sales.Invoices i
+               JOIN Sales.Customers c ON c.CustomerID = i.CustomerID
+               CROSS APPLY (SELECT InvoiceMonth = FORMAT(DATEADD(MM, DATEDIFF(MM, 0, I.InvoiceDate), 0), ''dd.MM.yyyy'')) Dates
+        ) AS s
+PIVOT (
+      COUNT(s.InvoiceID)
+      FOR s.CustomerName IN (' + @ColumnName + ')
+) AS pvt
+ORDER BY CAST(pvt.InvoiceMonth AS DATE);'
+
+EXEC sp_executesql @SQLRequest

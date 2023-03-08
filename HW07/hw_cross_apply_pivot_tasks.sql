@@ -67,7 +67,8 @@ SELECT InvoiceMonth
           FROM Sales.Invoices i
                JOIN Sales.Customers c ON c.CustomerID = i.CustomerID
                CROSS APPLY (SELECT InvoiceMonth = FORMAT(DATEADD(MM, DATEDIFF(MM, 0, I.InvoiceDate), 0), 'dd.MM.yyyy')) Dates
-               CROSS APPLY (SELECT SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16)) AS ClientName, c.CustomerID FROM Sales.Customers c WHERE c.CustomerID BETWEEN 2 AND 6) t
+               CROSS APPLY (SELECT ClientName = SUBSTRING(c.CustomerName, 16, (LEN(c.CustomerName) - 16))) t
+          WHERE C.CustomerID BETWEEN 2 AND 6
         ) AS s
 PIVOT (
       COUNT(s.InvoiceID)

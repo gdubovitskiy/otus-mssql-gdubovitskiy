@@ -24,7 +24,8 @@ USE WideWorldImporters
 1. Довставлять в базу пять записей используя insert в таблицу Customers или Suppliers 
 */
 
-напишите здесь свое решение
+SELECT TOP 100 *
+FROM Sales.Customers;
 
 /*
 2. Удалите одну запись из Customers, которая была вами добавлена
